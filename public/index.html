@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mission Control</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Mission Control</h1>
+    <div id="connection-status" class="status-badge disconnected">Disconnected</div>
+  </header>
+
+  <main>
+    <!-- Left: Agents sidebar -->
+    <section id="agents-panel">
+      <div class="panel-header">
+        <h2>Agents</h2>
+        <button id="new-agent-btn" class="btn btn-primary">+ New Agent</button>
+      </div>
+
+      <!-- New agent form (hidden by default) -->
+      <form id="new-agent-form" class="hidden">
+        <input type="text" id="agent-project-name" placeholder="Project name" required>
+        <input type="text" id="agent-project-path" placeholder="Project path (e.g. /tmp/myproject)" required>
+        <textarea id="agent-prompt" placeholder="Prompt / task description" rows="3" required></textarea>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Start</button>
+          <button type="button" id="cancel-agent-btn" class="btn btn-secondary">Cancel</button>
+        </div>
+      </form>
+
+      <div id="agents-list" class="scroll-container"></div>
+    </section>
+
+    <!-- Center: Questions + Agent Detail -->
+    <section id="center-panel">
+      <!-- Questions at the top -->
+      <div id="questions-section">
+        <div class="panel-header">
+          <h2>Pending Questions</h2>
+          <span id="question-count" class="badge">0</span>
+        </div>
+        <div id="questions-list"></div>
+      </div>
+
+      <!-- Agent detail below -->
+      <div id="agent-detail-section">
+        <div class="panel-header">
+          <h2 id="detail-title">Agent Output</h2>
+          <div id="detail-tabs">
+            <button class="tab-btn active" data-tab="output">Output</button>
+            <button class="tab-btn" data-tab="tools">Tools</button>
+          </div>
+        </div>
+        <div id="agent-detail" class="scroll-container">
+          <div class="empty-state">Select an agent to view its output.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Activity feed -->
+    <section id="activity-panel">
+      <div class="panel-header">
+        <h2>Activity</h2>
+      </div>
+      <div id="activity-list" class="scroll-container"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
