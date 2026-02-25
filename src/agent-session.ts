@@ -58,6 +58,24 @@ export class AgentSession {
     };
   }
 
+  stop(): void {
+    if (this.status === 'stopped' || this.status === 'completed') return;
+
+    // Resolve any pending question promises to unblock the awaiting canUseTool
+    for (const [id, resolver] of this.pendingResolvers) {
+      resolver({ _stopped: 'Agent was stopped' });
+      this.events.onQuestionResolved(id);
+    }
+    this.pendingResolvers.clear();
+
+    // Close the SDK query subprocess
+    this.queryInstance?.close();
+    this.queryInstance = null;
+
+    this.setStatus('stopped');
+    this.events.onActivity(this.id, this.projectName, 'Agent stopped by user');
+  }
+
   resolveAnswer(questionId: string, answers: Record<string, string>): boolean {
     const resolver = this.pendingResolvers.get(questionId);
     if (!resolver) return false;
@@ -75,7 +93,7 @@ export class AgentSession {
         prompt: this.prompt,
         options: {
           cwd: this.projectPath,
-          env: { ...process.env, CLAUDECODE: undefined },
+          env: { ...process.env, CLAUDECODE: undefined, ANTHROPIC_API_KEY: undefined },
           permissionMode: 'default',
           allowedTools: [
             'Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep',
@@ -102,10 +120,14 @@ export class AgentSession {
         this.handleMessage(message);
       }
 
-      // Query completed successfully
-      this.setStatus('completed');
-      this.events.onActivity(this.id, this.projectName, `Agent completed. Cost: $${this.totalCostUsd.toFixed(4)}`);
+      // Query completed — skip if already stopped
+      if (this.status !== 'stopped') {
+        this.setStatus('completed');
+        this.events.onActivity(this.id, this.projectName, `Agent completed. Cost: $${this.totalCostUsd.toFixed(4)}`);
+      }
     } catch (err) {
+      // Skip error handling if already stopped (close() throws)
+      if (this.status === 'stopped') return;
       this.error = err instanceof Error ? err.message : String(err);
       this.setStatus('errored');
       this.events.onActivity(this.id, this.projectName, `Agent errored: ${this.error}`);

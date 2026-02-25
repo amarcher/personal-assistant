@@ -4,39 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mission Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>Mission Control</h1>
-    <div id="connection-status" class="status-badge disconnected">Disconnected</div>
+    <div class="header-left">
+      <div class="logo-mark"></div>
+      <h1>Mission Control</h1>
+    </div>
+    <div class="header-right">
+      <div id="coordinator-status-header" class="coordinator-badge idle">
+        <span class="coordinator-dot"></span>
+        <span class="coordinator-label">Coordinator Idle</span>
+      </div>
+      <div id="connection-status" class="conn-badge disconnected">Disconnected</div>
+    </div>
   </header>
 
   <main>
-    <!-- Left: Agents sidebar -->
+    <!-- Left: Projects + Agents sidebar -->
     <section id="agents-panel">
       <div class="panel-header">
-        <h2>Agents</h2>
-        <button id="new-agent-btn" class="btn btn-primary">+ New Agent</button>
+        <h2>Projects</h2>
+        <button id="add-project-btn" class="btn-icon" title="Add project">+</button>
       </div>
+      <div id="projects-list"></div>
 
-      <!-- New agent form (hidden by default) -->
-      <form id="new-agent-form" class="hidden">
-        <input type="text" id="agent-project-name" placeholder="Project name" required>
-        <input type="text" id="agent-project-path" placeholder="Project path (e.g. /tmp/myproject)" required>
-        <textarea id="agent-prompt" placeholder="Prompt / task description" rows="3" required></textarea>
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">Start</button>
-          <button type="button" id="cancel-agent-btn" class="btn btn-secondary">Cancel</button>
-        </div>
-      </form>
-
+      <div class="panel-header">
+        <h2>Workers</h2>
+        <span id="agent-count" class="badge">0</span>
+      </div>
       <div id="agents-list" class="scroll-container"></div>
     </section>
 
-    <!-- Center: Questions + Agent Detail -->
+    <!-- Center: Chat + Escalations + Agent Detail -->
     <section id="center-panel">
-      <!-- Questions at the top -->
+      <!-- Chat -->
+      <div id="chat-section">
+        <div class="panel-header">
+          <h2>Coordinator</h2>
+          <div id="coordinator-thinking" class="thinking-indicator hidden">
+            <span class="thinking-dot"></span>
+            <span class="thinking-dot"></span>
+            <span class="thinking-dot"></span>
+          </div>
+        </div>
+        <div id="chat-messages" class="scroll-container"></div>
+        <div id="chat-attachments" class="chat-attachments hidden"></div>
+        <form id="chat-input-form">
+          <div class="chat-input-wrapper">
+            <button type="button" id="chat-attach-btn" title="Attach image">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 10l-3.5-3.5a1.5 1.5 0 00-2.12 0L2 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="5.5" cy="5.5" r="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+            <input type="text" id="chat-input" placeholder="Give a directive... (paste images with Ctrl+V)" autocomplete="off">
+            <button type="submit" id="chat-send-btn" title="Send directive">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14.5 8L1.5 1.5V6L9 8L1.5 10V14.5L14.5 8Z" fill="currentColor"/></svg>
+            </button>
+          </div>
+          <input type="file" id="chat-file-input" accept="image/*" multiple hidden>
+        </form>
+      </div>
+
+      <!-- Escalated Questions -->
+      <div id="escalations-section" class="hidden">
+        <div class="panel-header escalation-header">
+          <h2>Escalations</h2>
+          <span id="escalation-count" class="badge badge-warn">0</span>
+        </div>
+        <div id="escalations-list"></div>
+      </div>
+
+      <!-- Pending Questions (Phase 1 fallback) -->
       <div id="questions-section">
         <div class="panel-header">
           <h2>Pending Questions</h2>
@@ -46,16 +87,17 @@
       </div>
 
       <!-- Agent detail below -->
-      <div id="agent-detail-section">
+      <div id="agent-detail-section" class="collapsed">
         <div class="panel-header">
           <h2 id="detail-title">Agent Output</h2>
           <div id="detail-tabs">
             <button class="tab-btn active" data-tab="output">Output</button>
             <button class="tab-btn" data-tab="tools">Tools</button>
+            <button id="detail-collapse-btn" title="Toggle panel">&#9662;</button>
           </div>
         </div>
         <div id="agent-detail" class="scroll-container">
-          <div class="empty-state">Select an agent to view its output.</div>
+          <div class="empty-state">Select a worker to view its output.</div>
         </div>
       </div>
     </section>

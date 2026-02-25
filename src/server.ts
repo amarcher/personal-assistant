@@ -33,9 +33,13 @@ export function startServer(port: number): void {
     clients.add(ws);
 
     // Send full state snapshot on connect
-    const state = coordinator.getState();
+    const state = coordinator.getFullState();
     ws.send(JSON.stringify({ type: 'agents', agents: state.agents } satisfies ServerMessage));
     ws.send(JSON.stringify({ type: 'questions', questions: state.questions } satisfies ServerMessage));
+    ws.send(JSON.stringify({ type: 'coordinator_status', status: state.coordinatorStatus } satisfies ServerMessage));
+    ws.send(JSON.stringify({ type: 'chat_history', messages: state.chatHistory } satisfies ServerMessage));
+    ws.send(JSON.stringify({ type: 'escalations', escalations: state.escalations } satisfies ServerMessage));
+    ws.send(JSON.stringify({ type: 'projects', projects: state.projects } satisfies ServerMessage));
 
     ws.on('message', (raw) => {
       let msg: ClientMessage;
@@ -54,10 +58,38 @@ export function startServer(port: number): void {
           coordinator.submitAnswer(msg.questionId, msg.answers);
           break;
         }
+        case 'directive': {
+          coordinator.sendDirective(msg.text, msg.attachments);
+          break;
+        }
+        case 'answer_escalation': {
+          coordinator.submitEscalationAnswer(msg.questionId, msg.answers);
+          break;
+        }
+        case 'add_project': {
+          coordinator.addProject(msg.name, msg.path, msg.description);
+          break;
+        }
+        case 'remove_project': {
+          coordinator.removeProject(msg.projectId);
+          break;
+        }
+        case 'stop_agent': {
+          coordinator.stopAgent(msg.agentId);
+          break;
+        }
+        case 'stop_coordinator': {
+          coordinator.stopCoordinator();
+          break;
+        }
         case 'request_state': {
-          const s = coordinator.getState();
+          const s = coordinator.getFullState();
           ws.send(JSON.stringify({ type: 'agents', agents: s.agents } satisfies ServerMessage));
           ws.send(JSON.stringify({ type: 'questions', questions: s.questions } satisfies ServerMessage));
+          ws.send(JSON.stringify({ type: 'coordinator_status', status: s.coordinatorStatus } satisfies ServerMessage));
+          ws.send(JSON.stringify({ type: 'chat_history', messages: s.chatHistory } satisfies ServerMessage));
+          ws.send(JSON.stringify({ type: 'escalations', escalations: s.escalations } satisfies ServerMessage));
+          ws.send(JSON.stringify({ type: 'projects', projects: s.projects } satisfies ServerMessage));
           break;
         }
       }
